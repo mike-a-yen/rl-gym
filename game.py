@@ -76,7 +76,7 @@ def main(cfg) -> None:
     print('Before training')
     for _ in range(10):
         R, timesteps, randomness = world.run_episode(fit=False, render=True)
-        print(f'R: {R} ({timesteps} @ {randomness})')
+        print(f'R: {R} ({timesteps} steps @ {randomness} random)')
 
     for episode in tqdm(range(cfg.agent.num_episodes), unit='episode'):
         world.run_episode(fit=True, render=False)
@@ -85,7 +85,7 @@ def main(cfg) -> None:
     print(f'After training {cfg.agent.num_episodes} episodes.')
     for _ in range(10):
         R, timesteps, randomness = world.run_episode(fit=False, render=True)
-        print(f'R: {R} ({timesteps} @ {randomness})')
+        print(f'R: {R} ({timesteps} steps @ {randomness} random)')
 
     world.env.close()
 
