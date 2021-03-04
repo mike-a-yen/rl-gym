@@ -3,3 +3,4 @@ name: 'MountainCar-v0'
 states:
   - pos_x
   - pos_y
+max_frames: 10000

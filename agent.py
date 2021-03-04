@@ -16,7 +16,6 @@ from gym_model import QGymModel
 log = logging.getLogger(__file__)
 Memory = namedtuple('Memory', 'state,action,reward,next_state,done')
 
-MIN_REPLAY_SIZE = 2056
 UPDATE_TARGET_DELAY = 128  # in batches
 
 
@@ -53,7 +52,8 @@ class Agent:
         )
 
     def get_Qs(self, state):
-        X = torch.tensor(state, dtype=torch.float32)
+        device = torch.device(self.device)
+        X = torch.tensor(state, dtype=torch.float32, device=device)
         return self.model(X)
 
     def get_action(self, state, not_random: bool = False):

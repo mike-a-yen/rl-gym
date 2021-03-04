@@ -34,6 +34,8 @@ class World:
         self.num_episodes = 0
 
     def log_state(self, state):
+        if self.cfg.env.get('states') is None:
+            return
         log = {'step': self.agent.num_steps}
         for desc, val in zip(self.cfg.env.states, state):
             log.update({desc: val})
@@ -50,7 +52,7 @@ class World:
         total_reward = 0
         step = 0
         randomness = 0
-        while not done:
+        while not done and step < self.cfg.env.get('max_frames', float('inf')):
             if render:
                 self.env.render()
             self.log_state(state)

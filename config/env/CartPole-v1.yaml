@@ -5,3 +5,4 @@ states:
   - cart_vel
   - pole_pos
   - pole_vel
+max_frames: 10000
