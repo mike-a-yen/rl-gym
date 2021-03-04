@@ -1,0 +1,7 @@
+# @package _group_
+name: CartPole-v1
+states:
+  - cart_pos
+  - cart_vel
+  - pole_pos
+  - pole_vel

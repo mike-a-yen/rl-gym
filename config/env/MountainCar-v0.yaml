@@ -1,0 +1,5 @@
+# @package _group_
+name: 'MountainCar-v0'
+states:
+  - pos_x
+  - pos_y
