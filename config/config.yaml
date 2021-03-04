@@ -13,3 +13,5 @@ agent:
   lr: 0.001
   memory_size: 10000
   min_replay_size: 0
+settings:
+  render: true
