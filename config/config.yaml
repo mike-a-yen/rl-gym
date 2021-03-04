@@ -4,6 +4,7 @@ model:
   hidden_size: 128
   input_size: null
   output_size: null  # set at run time from env
+  device: cpu
 agent:
   num_episodes: 1000
   epsilon: 0.6

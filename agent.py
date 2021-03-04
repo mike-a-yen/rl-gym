@@ -20,12 +20,19 @@ MIN_REPLAY_SIZE = 2056
 UPDATE_TARGET_DELAY = 128  # in batches
 
 
+def create_model(input_size, hidden_size, output_size, device: str = 'cpu'):
+    model = QGymModel(input_size, hidden_size, output_size)
+    model = model.to(torch.device(device))
+    return model
+
+
 class Agent:
     def __init__(self, cfg, logger) -> None:
         self.cfg = cfg
         model_cfg = cfg.model
-        self.model = QGymModel(model_cfg.input_size, model_cfg.hidden_size, model_cfg.output_size)
-        self.target_model = QGymModel(model_cfg.input_size, model_cfg.hidden_size, model_cfg.output_size)
+        self.device = model_cfg.get('device', 'cpu')
+        self.model = create_model(model_cfg.input_size, model_cfg.hidden_size, model_cfg.output_size, self.device)
+        self.target_model = create_model(model_cfg.input_size, model_cfg.hidden_size, model_cfg.output_size, self.device)
         self.sync_target_model()
 
         self.optimizer = optim.Adam(self.model.parameters(), cfg.agent.lr)
@@ -63,11 +70,12 @@ class Agent:
         return action, was_random        
 
     def tensorify_batch(self, batch):
-        states = torch.tensor([sample.state for sample in batch], dtype=torch.float32)
-        actions = torch.tensor([sample.action for sample in batch], dtype=torch.long)
-        rewards = torch.tensor([sample.reward for sample in batch], dtype=torch.float32)
-        next_states = torch.tensor([sample.next_state for sample in batch], dtype=torch.float32)
-        is_done = torch.tensor([sample.done for sample in batch], dtype=torch.float32)
+        device = torch.device(self.device)
+        states = torch.tensor([sample.state for sample in batch], dtype=torch.float32, device=device)
+        actions = torch.tensor([sample.action for sample in batch], dtype=torch.long, device=device)
+        rewards = torch.tensor([sample.reward for sample in batch], dtype=torch.float32, device=device)
+        next_states = torch.tensor([sample.next_state for sample in batch], dtype=torch.float32, device=device)
+        is_done = torch.tensor([sample.done for sample in batch], dtype=torch.float32, device=device)
         return states, actions, rewards, next_states, is_done
 
     def train_on_batch(self, batch):
