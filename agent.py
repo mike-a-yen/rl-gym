@@ -90,7 +90,7 @@ class Agent:
         self.logger.log({'batch_size': batch_size, 'step_loss': loss.item(), 'step': self.num_steps})
         return loss
 
-    def train_step(self) -> None:
+    def train_on_replay(self) -> None:
         if len(self.memory) < self.cfg.agent.min_replay_size:
             return
         batch = self.sample_from_memory(self.batch_size, 'linear')

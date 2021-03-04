@@ -40,6 +40,12 @@ class World:
         self.logger.log(log)
 
     def run_episode(self, fit: bool = True, render: bool = False) -> None:
+        """
+        Run a single episode:
+            1. Reset environment
+            2. Loop over actions
+            3. Once done, optionally fit on the episode memory
+        """
         state, done = self.env.reset(), False
         total_reward = 0
         step = 0
@@ -50,11 +56,10 @@ class World:
             self.log_state(state)
             action, was_random = self.agent.get_action(state)
             next_state, reward, done, meta = self.env.step(action) # take a random action
-            reward = -1 if done else reward
             self.logger.log({'reward': reward, 'done': done})
             self.agent.remember(state, action, reward, next_state, done)
             step += 1
-            total_reward += 1
+            total_reward += reward
             randomness += was_random
             state = next_state
         if fit:

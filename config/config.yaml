@@ -6,9 +6,9 @@ model:
   output_size: null  # set at run time from env
 agent:
   num_episodes: 1000
-  gamma: 0.9
   epsilon: 0.6
   epsilon_decay: 0.995
+  gamma: 0.9
   batch_size: 1024
   lr: 0.001
   memory_size: 10000
