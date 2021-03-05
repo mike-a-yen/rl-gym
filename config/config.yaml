@@ -10,9 +10,7 @@ agent:
   epsilon: 0.6
   epsilon_decay: 0.995
   gamma: 0.9
-  batch_size: 1024
   lr: 0.001
-  memory_size: 10000
-  min_replay_size: 0
 settings:
   render: true
+  tags: null
