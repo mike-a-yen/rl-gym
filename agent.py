@@ -1,3 +1,4 @@
+import copy
 import random
 
 import numpy as np
@@ -8,9 +9,11 @@ import torch.optim as optim
 from memory import Memory
 
 class Agent:
-    def __init__(self, model, agent_cfg) -> None:
+    def __init__(self, model, target_model, agent_cfg) -> None:
         self.cfg = agent_cfg
         self.model = model
+        self.target_model = target_model
+        self.sync_target_model()
         self.device = list(self.model.parameters())[0].device
         self.memory = Memory(
             maxlen=1000,
@@ -23,7 +26,7 @@ class Agent:
         self.gamma = self.cfg.gamma
         self.epsilon = self.cfg.epsilon
         self.epsilon_decay = self.cfg.epsilon_decay
-        
+    
         self.num_steps = 0
     
     def get_Qs(self, state: np.ndarray) -> torch.Tensor:

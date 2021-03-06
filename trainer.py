@@ -3,7 +3,6 @@ class Trainer:
         self.env = env
         self.agent = agent
         self.highest_reward = 0
-        self.callbacks = []
 
     def run_episode(self, fit: bool = True, render: bool = False) -> None:
             """
@@ -23,6 +22,7 @@ class Trainer:
                 action, was_random = self.agent.get_action(state)
                 next_state, reward, done, meta = self.env.step(action) # take a random action
                 self.agent.memory.remember(state, action, reward, next_state, done)
+                # self.logger.log({'reward': reward, 'done': done})
                 step += 1
                 total_reward += reward
                 randomness += was_random
