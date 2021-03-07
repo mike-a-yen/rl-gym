@@ -1,7 +1,9 @@
 import logging
+from pathlib import Path
 
 import gym
 import hydra
+import torch
 from tqdm import tqdm
 
 from agent import Agent
@@ -19,23 +21,42 @@ def get_env_shapes(env):
     return input_shape, output_shape
 
 
+def create_model(input_shape, output_shape, cfg):
+    device = torch.device(cfg.model.device)
+    return GymConvModel(input_shape, cfg.model.hidden_size, output_shape).to(device)
+
+
+def configure_env(cfg):
+    env = gym.make(cfg.env.name)
+    playback_dir = Path().cwd() / 'recording'
+    playback_dir.mkdir(exist_ok=True, parents=True)
+    env = gym.wrappers.Monitor(env, Path.cwd() / 'recording')
+    return env
+
+
 @hydra.main(config_path='config', config_name='config')
 def main(cfg) -> None:
-    env = gym.make(cfg.env.name)
+    env = configure_env(cfg)    
     input_shape, output_shape = get_env_shapes(env)
-    model = GymConvModel(input_shape, cfg.model.hidden_size, output_shape)
-    target_model = GymConvModel(input_shape, cfg.model.hidden_size, output_shape)
+
+    model = create_model(input_shape, output_shape, cfg)
+    target_model = create_model(input_shape, output_shape, cfg)
     agent = Agent(model, target_model, cfg.agent)
     trainer = Trainer(env, agent)
 
-    with tqdm(total=cfg.agent.num_episodes, unit='episode') as pbar:
-        for episode in range(cfg.agent.num_episodes):
-            trainer.run_episode(fit=True, render=True)
-            pbar.update(1)
+    trainer.train(agent.cfg.num_episodes, fit_episode=False, render_every=cfg.settings.render_every)
+    # # trial and error loop
+    # with tqdm(total=cfg.agent.num_episodes, desc='Episode', unit='episode') as pbar:
+    #     for episode in range(cfg.agent.num_episodes):
+    #         render = episode % cfg.settings.render_every == 0
+    #         total_reward, loss, step, randomness = trainer.run_episode(fit=True, render=render, baby_step=cfg.agent.baby_step)
+    #         pbar.set_description(f'Episode {episode} (loss: {loss:0.4f})')
+    #         pbar.update(1)
 
+    # check results loop
     for _ in range(5):
         trainer.run_episode(fit=False, render=True)
-    #trainer.logger.summary.update({'highest_reward': world.highest_reward})
+    log.info(f'Highest Reward: {trainer.callback_runner.WandBLogger.highest_reward}')
     env.close()
     log.info('Done.')
 

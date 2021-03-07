@@ -1,16 +1,27 @@
+hydra:
+  run:
+    dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
 defaults:
+  - hydra/job_logging: colorlog
+  - hydra/hydra_logging: colorlog
   - env: ???
 model:
-  hidden_size: 128
+  hidden_size: 512
   input_size: null
   output_size: null  # set at run time from env
-  device: cpu
+  device: cuda
 agent:
   num_episodes: 1000
-  epsilon: 0.6
-  epsilon_decay: 0.995
-  gamma: 0.9
-  lr: 0.001
+  epsilon: 0.9
+  epsilon_decay: 0.99975
+  gamma: 0.99
+  lr: 0.00025
+  batch_size: 128
+  baby_step: 4  # fit one batch every 4 actions
+  target_step: 1024  # update the target network every 4 actions
+  memory_sampling: 0.5
+  replay_buffer: 10000
 settings:
   render: true
   tags: null
+  render_every: 1
