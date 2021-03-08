@@ -17,6 +17,7 @@ agent:
   gamma: 0.99
   lr: 0.00025
   batch_size: 128
+  lookback: 3  # stack n + 1 images as input to model
   baby_step: 4  # fit one batch every 4 actions
   target_step: 1024  # update the target network every 4 actions
   memory_sampling: 0.5

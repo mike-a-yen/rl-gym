@@ -9,7 +9,7 @@ import torch.optim as optim
 import torch.utils as utils
 from tqdm import tqdm
 
-from replay_buffer import ReplayBuffer
+from replay_buffer import ReplayBuffer, ImageLookbackReplayBuffer
 
 
 log = logging.getLogger(__file__)
@@ -22,7 +22,7 @@ class Agent:
         self.target_model = target_model
         self.sync_target_model()
         self.device = list(self.model.parameters())[0].device
-        self.memory = ReplayBuffer(self.cfg.replay_buffer)
+        self.memory = ImageLookbackReplayBuffer(self.cfg.lookback, self.cfg.replay_buffer)
 
         self.optimizer = optim.Adam(self.model.parameters(), self.cfg.lr)
         self.batch_size = self.cfg.batch_size
@@ -88,7 +88,7 @@ class Agent:
         return self.train_on_dl(dl, sync_target=True, **kwargs)
 
     def train_on_memory(self, epochs: int = 1, sampling: float = None, sync_target: bool = False, **kwargs):
-        dl = self.memory.to_dl(sampling, self.cfg.batch_size, self.device)
+        dl = self.memory.to_dl(sampling, self.cfg.batch_size, device=self.device)
         for _ in range(epochs):
             loss = self.train_on_dl(dl, sync_target=sync_target, **kwargs)
         return loss
