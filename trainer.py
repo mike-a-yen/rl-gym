@@ -6,7 +6,6 @@ import torch.utils.data as data
 from tqdm import tqdm
 
 from callbacks import CallbackRunner, ModelCheckpoint, WandBLogger, ReplayBuffer
-from memory import Memory
 
 
 log = logging.getLogger(__file__)
@@ -60,11 +59,11 @@ class Trainer:
                 action, was_random = self.agent.get_action(state)
                 next_state, reward, done, meta = self.env.step(action) # take a random action
                 next_state = self.state_transformation(next_state)
-                self.agent.memory.remember(state, action, reward, next_state, done)
+                self.agent.memory.append(state, action, reward, next_state, done, was_random)
                 self.callback_runner('on_step_end', state, action, reward, next_state, done, was_random)
                 run_baby_step = baby_step != 0 and step % baby_step == 0
-                if run_baby_step and self.agent.memory.num_steps > self.agent.batch_size:
-                    sync_target = self.agent.num_steps % self.agent.cfg.target_step == 0
+                if run_baby_step and self.callback_runner.WandBLogger.num_steps > self.agent.batch_size:
+                    sync_target = self.callback_runner.WandBLogger.num_steps % self.agent.cfg.target_step == 0
                     self.agent.train_on_memory(1, sampling=self.agent.batch_size, sync_target=sync_target, silence=True)
                 # TODO: train on replay buffer callback
                 # if run_baby_step and self.callback_runner.ReplayBuffer.num_steps > self.agent.batch_size:
@@ -76,9 +75,6 @@ class Trainer:
                 state = next_state
             episode_loss = None
             if fit:  # fit on this episode
-                episode_loss = self.agent.train_on_episode(
-                    self.agent.memory.latest_episode,
-                    sampling=self.agent.cfg.memory_sampling
-                )
+                episode_loss = self.agent.train_on_memory(1, sampling=self.agent.cfg.memory_sampling)
             self.callback_runner('on_episode_end', total_reward, randomness, step, episode_loss)
             return total_reward, episode_loss, step, randomness
