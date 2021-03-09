@@ -47,6 +47,8 @@ class Agent:
             action = random.randint(0, self.model.output_size - 1)
             was_random = True
         else:
+            state = self.memory.stack_and_pad_states([state] + self.memory.get_lookback())
+            assert state.shape[0] == self.cfg.lookback + 1
             Q = self.get_Qs(state)
             action = int(Q.argmax().item())
         return action, was_random        

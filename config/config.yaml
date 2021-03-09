@@ -5,11 +5,7 @@ defaults:
   - hydra/job_logging: colorlog
   - hydra/hydra_logging: colorlog
   - env: ???
-model:
-  hidden_size: 512
-  input_size: null
-  output_size: null  # set at run time from env
-  device: cuda
+  - model: mnih
 agent:
   num_episodes: 1000
   epsilon: 0.9
@@ -19,9 +15,8 @@ agent:
   batch_size: 128
   lookback: 3  # stack n + 1 images as input to model
   baby_step: 4  # fit one batch every 4 actions
-  target_step: 1024  # update the target network every 4 actions
-  memory_sampling: 0.5
-  replay_buffer: 10000
+  target_step: 1024  # update the target network every 1024 actions
+  replay_buffer: 50000
 settings:
   render: true
   tags: null

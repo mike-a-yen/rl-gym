@@ -122,6 +122,10 @@ class ImageLookbackReplayBuffer(ReplayBuffer):
         idxs = [random.randint(0, len(self) - 1) for _ in range(n)]
         return [self[i] for i in idxs]
 
+    def get_lookback(self):
+        upper = max(-len(self), -self.lookback)
+        return [self.states[-i] for i in range(-1, upper, -1)]
+
     def __getitem__(self, idx: int):
         lower = max(-1, idx - self.lookback - 1)
         lookback_idxs = list(range(idx, lower, -1))

@@ -1,5 +1,6 @@
 import logging
 
+import numpy as np
 from omegaconf import OmegaConf
 import torch
 import torch.utils.data as data
@@ -11,13 +12,17 @@ from callbacks import CallbackRunner, ModelCheckpoint, WandBLogger, ReplayBuffer
 log = logging.getLogger(__file__)
 
 
+def rgb2grey(img: np.ndarray):
+    return np.dot(img, [0.2989, 0.5870, 0.1140])[:, :,np.newaxis]
+
+
 class Trainer:
     def __init__(self, env, agent):
         self.env = env
         self.agent = agent
         self.callback_runner = CallbackRunner(
             WandBLogger(self.env.spec.id, config=OmegaConf.to_container(self.agent.cfg)),
-            ModelCheckpoint(),
+            ModelCheckpoint(best_only=True),
             # ReplayBuffer(self.agent.cfg.replay_buffer),  TODO: have agent train off of this buffer rather than its own memory
             model=self.agent.model
         )
@@ -37,10 +42,12 @@ class Trainer:
         self.callback_runner('on_train_end')
 
     def state_transformation(self, state):
-        """Normalize and transpose the image to (C, W, H)."""
-        return (state / 255.).transpose((2, 0, 1))  # normalize image
+        """Normalize greyscale and transpose the image to (C, W, H)."""
+        grey_img = rgb2grey(state)
+        scaled_img = (grey_img / 255.)
+        return scaled_img.transpose((2, 0, 1))
 
-    def run_episode(self, fit: bool = True, render: bool = False, baby_step: int = 0) -> None:
+    def run_episode(self, fit: bool = True, render: bool = False, baby_step: int = 0, time_limit: int = 10000) -> None:
             """
             Run a single episode:
                 1. Reset environment
@@ -53,22 +60,20 @@ class Trainer:
             total_reward = 0
             step = 0
             randomness = 0
-            while not done:
+            while not done and step < time_limit:
                 if render:
                     self.env.render()
+                self.callback_runner('on_action_begin', state)
                 action, was_random = self.agent.get_action(state)
+                self.callback_runner('on_step_begin', action, was_random)
                 next_state, reward, done, meta = self.env.step(action) # take a random action
                 next_state = self.state_transformation(next_state)
                 self.agent.memory.append(state, action, reward, next_state, done, was_random)
                 self.callback_runner('on_step_end', state, action, reward, next_state, done, was_random)
                 run_baby_step = baby_step != 0 and step % baby_step == 0
-                if run_baby_step and self.callback_runner.WandBLogger.num_steps > self.agent.batch_size:
+                if run_baby_step and len(self.agent.memory) > 10 * self.agent.batch_size:
                     sync_target = self.callback_runner.WandBLogger.num_steps % self.agent.cfg.target_step == 0
                     self.agent.train_on_memory(1, sampling=self.agent.batch_size, sync_target=sync_target, silence=True)
-                # TODO: train on replay buffer callback
-                # if run_baby_step and self.callback_runner.ReplayBuffer.num_steps > self.agent.batch_size:
-                #     sync_target = self.agent.num_steps % self.agent.cfg.target_step == 0
-                #     self.agent.train_on_memory
                 step += 1
                 total_reward += reward
                 randomness += was_random

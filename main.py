@@ -23,9 +23,9 @@ def get_env_shapes(env):
 
 def create_model(input_shape, output_shape, cfg):
     device = torch.device(cfg.model.device)
-    channel_multiplier = cfg.agent.get('lookback', 0) + 1
-    input_shape[-1] *= channel_multiplier
-    return GymConvModel(input_shape, cfg.model.hidden_size, output_shape).to(device)
+    num_channels = cfg.agent.get('lookback', 0) + 1
+    h, w, c = input_shape[0], input_shape[1], num_channels
+    return GymConvModel((h, w, c), cfg.model.convs, cfg.model.hidden_size, output_shape).to(device)
 
 
 def configure_env(cfg):

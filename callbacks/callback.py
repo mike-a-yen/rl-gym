@@ -27,7 +27,13 @@ class Callback:
     def on_episode_end(self, reward: int, randomness: float, frames: int, loss: float) -> None:
         pass
 
-    def on_step_begin(self):
+    def on_action_begin(self, state):
+        pass
+    
+    def on_action_end(self, action):
+        pass
+
+    def on_step_begin(self, action, was_random):
         pass
 
     def on_step_end(self, state, action, reward, next_state, done, was_random) -> None:

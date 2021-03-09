@@ -40,53 +40,47 @@ class QGymModel(nn.Module):
         return self.layers(X)
 
 
+def make_conv(input_shape, num_kernels, kernel_size, stride=1):
+    """Stack a conv/activation layer and compute the output size.
+
+    Parameters
+    ----------
+    input_shape : tuple
+        expected input shape (w, h, c)
+    num_kernels : int
+    kernel_size : int
+    stride : int, optional
+        kernel stride, by default 1
+
+    Returns
+    -------
+    conv_layer, output_shape (w, h, c)
+    """
+    w_in, h_in, c_in = input_shape
+    conv = nn.Sequential(
+        nn.Conv2d(c_in, num_kernels, kernel_size, stride=stride),
+        nn.ReLU()
+    )
+    h_out, w_out = compute_output_size((h_in, w_in), conv[0])
+    return conv, (w_out, h_out, num_kernels)
+
+
 class GymConvModel(nn.Module):
-    def __init__(self, input_shape, hidden_size, output_size):
+    def __init__(self, input_shape, convs, hidden_size, output_size):
         super().__init__()
         self.input_shape = input_shape  # (H, W, C)
         self.output_size = output_size
         self.w_in, self.h_in, self.c_in = self.input_shape
-
         self.hidden_size = hidden_size
-        self.conv_channels = 64
-        self.kernel_size = 3
-        self.conv1 = nn.Sequential(
-            nn.Conv2d(self.c_in, self.conv_channels, kernel_size=self.kernel_size),
-            nn.ReLU(),
-            nn.MaxPool2d(2, 2)
-        )  # (B, C, h_in - 2, w_in - 2)
-        h_out, w_out = compute_output_size(
-            compute_output_size(
-                (self.h_in, self.w_in),
-                self.conv1[0]
-            ),
-            self.conv1[2]
-        )
-        self.conv2 = nn.Sequential(
-            nn.Conv2d(self.conv_channels, self.conv_channels, kernel_size=self.kernel_size),
-            nn.ReLU(),
-            nn.MaxPool2d(2, 2)
-        )
-        h_out, w_out = compute_output_size(
-            compute_output_size(
-                (h_out, w_out),
-                self.conv2[0]
-            ),
-            self.conv2[2]
-        )
-        self.conv3 = nn.Sequential(
-            nn.Conv2d(self.conv_channels, self.conv_channels, kernel_size=self.kernel_size),
-            nn.ReLU(),
-            nn.MaxPool2d(2, 2)
-        )
-        h_out, w_out = compute_output_size(
-            compute_output_size(
-                (h_out, w_out),
-                self.conv3[0]
-            ),
-            self.conv3[2]
-        )
-        self.flat_size = (h_out * w_out) * self.conv_channels
+
+        conv_layers, in_shape = [], (self.w_in, self.h_in, self.c_in)
+        for conv_config in convs:
+            layer, out_shape = make_conv(in_shape, conv_config.num_kernels, conv_config.kernel_size, conv_config.stride)
+            conv_layers.append(layer)
+            in_shape = out_shape
+
+        self.conv = nn.Sequential(*conv_layers)
+        self.flat_size = out_shape[0] * out_shape[1] * out_shape[2]
         self.mlp = nn.Sequential(
             nn.Linear(self.flat_size, self.hidden_size),
             nn.ReLU(),
@@ -94,9 +88,6 @@ class GymConvModel(nn.Module):
         )
 
     def forward(self, X):
-        #X_t = X.transpose(1, 3).transpose(2, 3)  # (B, C, W, H)
-        c1 = self.conv1(X)
-        c2 = self.conv2(c1)
-        c_out = self.conv3(c2)
+        c_out = self.conv(X)
         cout_flat = c_out.reshape(-1, self.flat_size)
         return self.mlp(cout_flat)
