@@ -61,6 +61,7 @@ def make_conv(input_shape, num_kernels, kernel_size, stride=1):
         nn.Conv2d(c_in, num_kernels, kernel_size, stride=stride),
         nn.ReLU()
     )
+    nn.init.kaiming_uniform_(conv[0].weight, a=0, nonlinearity='relu')
     h_out, w_out = compute_output_size((h_in, w_in), conv[0])
     return conv, (w_out, h_out, num_kernels)
 

@@ -7,16 +7,23 @@ defaults:
   - env: ???
   - model: mnih
 agent:
-  num_episodes: 1000
-  epsilon: 0.9
-  epsilon_decay: 0.99975
+  num_episodes: 10000
+  eval_every: 500
+  eval_episodes: 5
+  epsilon:
+    start: 1.0
+    stop: 0.1
+    steps: 200000
+    eval: 0.05
   gamma: 0.99
-  lr: 0.00025
-  batch_size: 128
-  lookback: 3  # stack n + 1 images as input to model
+  loss: huber
+  optimizer: adam
+  lr: 0.0001
+  batch_size: 32
   baby_step: 4  # fit one batch every 4 actions
-  target_step: 1024  # update the target network every 1024 actions
-  replay_buffer: 50000
+  target_step: 10000  # update the target network every 1024 actions
+  replay_buffer: 250000  # max buffer size
+  min_replay_buffer_size: 50000  # wait to train until buffer reaches this size
 settings:
   render: true
   tags: null

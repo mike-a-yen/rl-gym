@@ -1,6 +1,6 @@
 from collections import deque, namedtuple
 import random
-from typing import Union, Optional
+from typing import List, Union, Optional
 
 import numpy as np
 import torch
@@ -12,7 +12,7 @@ Num = Union[int, float]
 
 
 class ReplayDataset(utils.data.Dataset):
-    def __init__(self, steps: deque) -> None:
+    def __init__(self, steps: List) -> None:
         self.steps = steps
 
     def __getitem__(self, idx: int):
@@ -85,12 +85,12 @@ class ImageLookbackReplayBuffer(ReplayBuffer):
     def __init__(self, lookback: int, maxsize: int = None) -> None:
         self.lookback = lookback
         self.maxsize = maxsize
-        self.states = deque(maxlen=self.maxsize)  # images
-        self.actions = deque(maxlen=self.maxsize)
-        self.rewards = deque(maxlen=self.maxsize)
+        self.states = []  # images
+        self.actions = []
+        self.rewards = []
         self.next_state = None  # a single image
-        self.done = deque(maxlen=self.maxsize)
-        self.was_random = deque(maxlen=self.maxsize)
+        self.done = []
+        self.was_random = []
 
     def append(self, state, action, reward, next_state, done, was_random) -> None:
         self.states.append(state)
@@ -99,6 +99,12 @@ class ImageLookbackReplayBuffer(ReplayBuffer):
         self.next_state = next_state
         self.done.append(done)
         self.was_random.append(was_random)
+        if len(self) > self.maxsize:
+            self.states.pop(0)
+            self.actions.pop(0)
+            self.rewards.pop(0)
+            self.done.pop(0)
+            self.was_random.pop(0)
 
     def to_dl(self, sampling: Optional[Num], batch_size, device) -> utils.data.DataLoader:
         if sampling is None:

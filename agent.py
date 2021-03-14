@@ -1,6 +1,7 @@
 import copy
 import logging
 import random
+from typing import Optional
 
 import numpy as np
 import torch
@@ -9,10 +10,29 @@ import torch.optim as optim
 import torch.utils as utils
 from tqdm import tqdm
 
-from replay_buffer import ReplayBuffer, ImageLookbackReplayBuffer
+from decay_schedule import LinearDecay
+from hooks import visualize_Q_values
 
 
 log = logging.getLogger(__file__)
+
+
+def configure_optimizer(cfg, model):
+    if cfg.optimizer == 'adam':
+        optimizer = optim.Adam
+    elif cfg.optimizer == 'sgd':
+        optimizer = optim.SGD
+    elif cfg.optimizer == 'rmsprop':
+        optimizer = optim.RMSprop
+    return optimizer(model.parameters(), cfg.lr)
+
+
+def configure_loss(cfg):
+    if cfg.loss == 'huber':
+        criterion = nn.SmoothL1Loss()
+    elif cfg.loss == 'mse':
+        criterion = nn.MSELoss()
+    return criterion
 
 
 class Agent:
@@ -22,43 +42,38 @@ class Agent:
         self.target_model = target_model
         self.sync_target_model()
         self.device = list(self.model.parameters())[0].device
-        self.memory = ImageLookbackReplayBuffer(self.cfg.lookback, self.cfg.replay_buffer)
 
-        self.optimizer = optim.Adam(self.model.parameters(), self.cfg.lr)
+        self.optimizer = configure_optimizer(self.cfg, self.model)
         self.batch_size = self.cfg.batch_size
-        self.criterion = nn.MSELoss()
+        self.criterion = configure_loss(self.cfg)
 
         self.gamma = self.cfg.gamma
-        self.epsilon = self.cfg.epsilon
-        self.epsilon_decay = self.cfg.epsilon_decay
+        self.epsilon = LinearDecay(self.cfg.epsilon.start, self.cfg.epsilon.stop, self.cfg.epsilon.steps)
 
         self.num_steps = 0
 
     @torch.no_grad()
-    def get_Qs(self, state: np.ndarray) -> torch.Tensor:
-        device = torch.device(self.device)
-        X = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
+    def get_Q(self, state: np.ndarray) -> torch.Tensor:
+        X = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
         return self.model(X)
 
-    def get_action(self, state, not_random: bool = False):
+    def get_action(self, Q, epsilon: Optional[float] = None):
+        """Epsilon greedy policy."""
         was_random = False
-        rand_action_thresh = self.epsilon * (self.epsilon_decay**self.num_steps)
-        if not not_random and random.random() < rand_action_thresh:  # select random
+        rand_action_thresh = self.epsilon.get(self.num_steps) if epsilon is None else epsilon
+        if random.random() < rand_action_thresh:  # select random
             action = random.randint(0, self.model.output_size - 1)
             was_random = True
         else:
-            state = self.memory.stack_and_pad_states([state] + self.memory.get_lookback())
-            assert state.shape[0] == self.cfg.lookback + 1
-            Q = self.get_Qs(state)
             action = int(Q.argmax().item())
-        return action, was_random        
+        return action, was_random
 
     def train_on_step(self, states: torch.Tensor, actions: torch.Tensor, rewards: torch.Tensor, next_states: torch.Tensor, is_done: torch.Tensor, sync_target: bool = False):
         B = states.shape[0]
         idx = torch.arange(B, device=self.device)
 
         current_Q = self.model(states)
-        next_Q = self.target_model(next_states)
+        next_Q = self.target_model(next_states).detach()
 
         Qnew = rewards + (1. - is_done) * self.gamma * next_Q.max(dim=1).values
 
@@ -85,16 +100,8 @@ class Agent:
                 self.sync_target_model()
         return episode_loss / num_batches
 
-    def train_on_episode(self, sampling: float, **kwargs):
-        dl = self.memory.to_dl(sampling, self.cfg.batch_size, device=self.device)
-        return self.train_on_dl(dl, sync_target=True, **kwargs)
-
-    def train_on_memory(self, epochs: int = 1, sampling: float = None, sync_target: bool = False, **kwargs):
-        dl = self.memory.to_dl(sampling, self.cfg.batch_size, device=self.device)
-        for _ in range(epochs):
-            loss = self.train_on_dl(dl, sync_target=sync_target, **kwargs)
-        return loss
-
     def sync_target_model(self):
         self.target_model.load_state_dict(copy.deepcopy(self.model.state_dict()))
         self.target_model.eval()
+        for p in self.target_model.parameters():
+            p.requires_grad = False

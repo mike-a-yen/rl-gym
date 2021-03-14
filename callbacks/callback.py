@@ -24,10 +24,10 @@ class Callback:
     def on_episode_begin(self):
         pass
 
-    def on_episode_end(self, reward: int, randomness: float, frames: int, loss: float) -> None:
+    def on_episode_end(self) -> None:
         pass
 
-    def on_action_begin(self, state):
+    def on_action_begin(self, state, Q):
         pass
     
     def on_action_end(self, action):
@@ -37,6 +37,12 @@ class Callback:
         pass
 
     def on_step_end(self, state, action, reward, next_state, done, was_random) -> None:
+        pass
+
+    def on_eval_begin(self):
+        pass
+
+    def on_eval_end(self):
         pass
 
     @property

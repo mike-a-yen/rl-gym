@@ -3,12 +3,15 @@ name: Mnih
 desc: "https://arxiv.org/pdf/1312.5602v1.pdf"
 input_size: null
 output_size: null  # set at run time from env
-hidden_size: 256
+hidden_size: 512  # paper says 256, github says 512
 convs:
   - kernel_size: 8
-    num_kernels: 16
+    num_kernels: 32
     stride: 4
   - kernel_size: 4
-    num_kernels: 32
+    num_kernels: 64
     stride: 2
+  - kernel_size: 3
+    num_kernels: 64
+    stride: 1
 device: cuda
