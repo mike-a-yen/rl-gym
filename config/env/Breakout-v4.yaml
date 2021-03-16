@@ -10,6 +10,6 @@ wrappers:
   - _target_: gym.wrappers.FrameStack
     num_stack: 3
     lz4_compress: true
-  - _target_: wrappers.DeathPenaltyRewardWrapper
+  # - _target_: wrappers.DeathPenaltyRewardWrapper
   - _target_: wrappers.UnitRewardWrapper
 states: null

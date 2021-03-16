@@ -7,23 +7,24 @@ defaults:
   - env: ???
   - model: mnih
 agent:
-  num_episodes: 10000
-  eval_every: 500
-  eval_episodes: 5
   epsilon:
     start: 1.0
     stop: 0.1
     steps: 200000
     eval: 0.05
   gamma: 0.99
-  loss: huber
+trainer:
   optimizer: adam
   lr: 0.0001
   batch_size: 32
+  loss: huber
   baby_step: 4  # fit one batch every 4 actions
   target_step: 10000  # update the target network every 1024 actions
   replay_buffer: 250000  # max buffer size
   min_replay_buffer_size: 50000  # wait to train until buffer reaches this size
+  num_episodes: 10000
+  eval_every: 500
+  eval_episodes: 5
 settings:
   render: true
   tags: null

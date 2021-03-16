@@ -9,5 +9,5 @@ pip install -r requirements.txt
 
 ## Train
 ```
-python game.py env=<NameofOpenAIEnv>
+python main.py env=<NameofOpenAIEnv>
 ```

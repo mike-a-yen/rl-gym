@@ -1,3 +1,15 @@
 # @package _group_
-name: Pong-v0
+name: PongNoFrameskip-v0
+wrappers:
+  - _target_: gym.wrappers.AtariPreprocessing
+    frame_skip: 4
+    screen_size: 84
+    grayscale_obs: true
+    grayscale_newaxis: false
+    scale_obs: true
+  - _target_: gym.wrappers.FrameStack
+    num_stack: 3
+    lz4_compress: true
+  # - _target_: wrappers.DeathPenaltyRewardWrapper
+  # - _target_: wrappers.UnitRewardWrapper
 states: null

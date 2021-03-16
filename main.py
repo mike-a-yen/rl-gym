@@ -40,14 +40,13 @@ def configure_env(cfg):
 @hydra.main(config_path='config', config_name='config')
 def main(cfg) -> None:
     env = configure_env(cfg)
-    return  
     input_shape, output_shape = get_env_shapes(env)
     model = create_model(input_shape, output_shape, cfg)
     target_model = create_model(input_shape, output_shape, cfg)
     agent = Agent(model, target_model, cfg.agent)
-    trainer = Trainer(env, agent)
+    trainer = Trainer(env, agent, cfg.trainer)
 
-    trainer.train(agent.cfg.num_episodes, cfg.agent.eval_every, render_every=cfg.settings.render_every)
+    trainer.train(cfg.trainer.num_episodes, cfg.trainer.eval_every, render_every=cfg.settings.render_every)
 
     for _ in range(5):
         trainer.run_episode(fit=False, render=True)
