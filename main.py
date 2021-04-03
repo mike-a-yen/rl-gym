@@ -50,7 +50,10 @@ def main(cfg) -> None:
     target_model = create_model(input_shape, output_shape, cfg)
     agent = Agent(model, target_model, cfg.agent)
     trainer = Trainer(env, agent, cfg.trainer)
-    trainer.callback_runner.WandBLogger.run.config.update({'env': OmegaConf.to_container(cfg.env)})
+    trainer.callback_runner.WandBLogger.run.config.update({
+        'env': OmegaConf.to_container(cfg.env),
+        'model': OmegaConf.to_container(cfg.model)
+    })
     trainer.train(cfg.trainer.num_episodes, cfg.trainer.eval_every, render_every=cfg.settings.render_every)
 
     for _ in range(5):

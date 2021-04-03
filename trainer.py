@@ -162,8 +162,9 @@ class Trainer:
             total_reward += reward
             state = next_state
         self.callback_runner('on_episode_end')
-        video_filename = self.eval_env.video_recorder.path
-        self.callback_runner.WandBLogger.run.log({'replay': wandb.Video(video_filename, fps=4, format="gif")})
+        # Video files should be uploaded at the end of the run.
+        # video_filename = self.eval_env.video_recorder.path
+        # self.callback_runner.WandBLogger.run.log({'replay': wandb.Video(video_filename, fps=4, format="gif")})
         return total_reward
 
     @property
