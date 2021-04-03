@@ -51,7 +51,7 @@ class Trainer:
 
         run_cfg = {'agent': OmegaConf.to_container(self.agent.cfg), 'trainer': OmegaConf.to_container(self.cfg)}
         self.callback_runner = CallbackRunner(
-            WandBLogger(self.env.spec.id, config=run_cfg, plot_every=100),
+            WandBLogger('atari-Q', config=run_cfg, plot_every=250, tags=[self.env.spec.id]),
             ModelCheckpoint(best_only=True),
             ReplayBuffer(self.cfg.replay_buffer),
             TargetModelUpdater(self.cfg.target_step),  # runs weight sync for target model
