@@ -1,12 +1,19 @@
 # @package _group_
 name: BreakoutNoFrameskip-v4
 wrappers:
+  - _target_: wrappers.FireOnResetWrapper
   - _target_: gym.wrappers.AtariPreprocessing
     frame_skip: 4
+    noop_max: 10
     screen_size: 84
     grayscale_obs: true
     grayscale_newaxis: false
     scale_obs: true
+    terminal_on_life_loss: false
+  - _target_: wrappers.CropImage
+    start: 10
+    end: null
+    dim: 0
   - _target_: gym.wrappers.FrameStack
     num_stack: 3
     lz4_compress: true

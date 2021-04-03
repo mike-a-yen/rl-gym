@@ -3,6 +3,7 @@ from pathlib import Path
 
 import gym
 import hydra
+from omegaconf import OmegaConf
 import torch
 from tqdm import tqdm
 
@@ -39,8 +40,12 @@ def configure_env(cfg):
 
 @hydra.main(config_path='config', config_name='config')
 def main(cfg) -> None:
+    log.info(f'\n{OmegaConf.to_yaml(cfg)}')
     env = configure_env(cfg)
     input_shape, output_shape = get_env_shapes(env)
+    log.info(f'In <- {input_shape}')
+    log.info(f'Out -> {output_shape}')
+
     model = create_model(input_shape, output_shape, cfg)
     target_model = create_model(input_shape, output_shape, cfg)
     agent = Agent(model, target_model, cfg.agent)
@@ -49,9 +54,10 @@ def main(cfg) -> None:
     trainer.train(cfg.trainer.num_episodes, cfg.trainer.eval_every, render_every=cfg.settings.render_every)
 
     for _ in range(5):
-        trainer.run_episode(fit=False, render=True)
+        trainer.eval_episode(render=True)
     log.info(f'Highest Reward: {trainer.callback_runner.WandBLogger.highest_reward}')
-    env.close()
+    trainer.env.close()
+    trainer.eval_env.close()
     log.info('Done.')
 
 

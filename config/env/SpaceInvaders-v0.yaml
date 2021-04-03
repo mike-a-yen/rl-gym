@@ -1,24 +1,14 @@
 # @package _group_
-name: PongNoFrameskip-v0
+name: SpaceInvadersNoFrameskip-v0
 wrappers:
   - _target_: gym.wrappers.AtariPreprocessing
-    frame_skip: 4
+    frame_skip: 3  # 4 makes the lasers invisible
     screen_size: 84
     grayscale_obs: true
     grayscale_newaxis: false
     scale_obs: true
-    noop_max: 10
-  - _target_: wrappers.ActionLimiter
-    allowed_actions:
-      - NOOP
-      - FIRE
-      - LEFT
-      - RIGHT
-  - _target_: wrappers.CropImage
-    start: 10
-    end: null
-    dim: 0
   - _target_: gym.wrappers.FrameStack
     num_stack: 3
     lz4_compress: true
+  - _target_: wrappers.UnitRewardWrapper
 states: null
