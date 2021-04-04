@@ -14,4 +14,4 @@ convs:
   - kernel_size: 3
     num_kernels: 64
     stride: 1
-device: cuda
+device: cuda:1
