@@ -1,5 +1,6 @@
 from collections import namedtuple
 import logging
+import time
 
 import gym
 import numpy as np
@@ -51,7 +52,7 @@ class Trainer:
 
         run_cfg = {'agent': OmegaConf.to_container(self.agent.cfg), 'trainer': OmegaConf.to_container(self.cfg)}
         self.callback_runner = CallbackRunner(
-            WandBLogger('atari-Q', config=run_cfg, plot_every=250, tags=[self.env.spec.id]),
+            WandBLogger('atari-Q', config=run_cfg, plot_every=500, tags=[self.env.spec.id]),
             ModelCheckpoint(best_only=True),
             ReplayBuffer(self.cfg.replay_buffer),
             TargetModelUpdater(self.cfg.target_step),  # runs weight sync for target model
@@ -74,8 +75,9 @@ class Trainer:
     def train(self, num_episodes: int, eval_every: int = 100, render_every: int = 1) -> None:
         # trial and error loop
         self.callback_runner('on_train_begin')
+        start_time, elapsed_time = time.time(), 0
         with tqdm(total=num_episodes, desc='Episode', unit='episode') as pbar:
-            for episode in range(num_episodes):
+            while episode < num_episodes and elapsed_time < self.cfg.training_time_limit:
                 render = render_every > 0 and episode % render_every == 0
                 R = self.run_episode(render=render, baby_step=self.cfg.baby_step, time_limit=self.cfg.episode_time_limit)
                 pbar.set_description(f'Episode {episode}')
@@ -88,6 +90,8 @@ class Trainer:
                         eval_reward += R
                     log.info(f'Eval Reward: {eval_reward/self.cfg.eval_episodes:0.2f}')
                     self.callback_runner('on_eval_end')
+                episode += 1
+                elapsed_time = time.time() - start_time
         self.callback_runner('on_train_end')
 
     def run_episode(self, render: bool = False, baby_step: int = 0, time_limit: int = 1000) -> None:

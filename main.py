@@ -28,7 +28,8 @@ def get_env_shapes(env):
 def create_model(input_shape, output_shape, cfg):
     device = torch.device(cfg.model.device)
     c, h, w = input_shape
-    return GymConvModel((h, w, c), cfg.model.convs, cfg.model.hidden_size, output_shape).to(device)
+    model = GymConvModel((h, w, c), cfg.model.convs, cfg.model.hidden_size, output_shape)
+    return model.to(device)
 
 
 def configure_env(cfg):
@@ -49,11 +50,15 @@ def main(cfg) -> None:
     model = create_model(input_shape, output_shape, cfg)
     target_model = create_model(input_shape, output_shape, cfg)
     agent = Agent(model, target_model, cfg.agent)
+
     trainer = Trainer(env, agent, cfg.trainer)
     trainer.callback_runner.WandBLogger.run.config.update({
         'env': OmegaConf.to_container(cfg.env),
         'model': OmegaConf.to_container(cfg.model)
     })
+    if cfg.settings.tags is not None:
+        trainer.callback_runner.WandBLogger.run.tags += list(cfg.settings.tags)
+        trainer.callback_runner.WandBLogger.run.update()
     trainer.train(cfg.trainer.num_episodes, cfg.trainer.eval_every, render_every=cfg.settings.render_every)
 
     for _ in range(5):

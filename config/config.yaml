@@ -20,9 +20,10 @@ trainer:
   loss: huber
   baby_step: 4  # fit one batch every 4 actions
   target_step: 10000  # update the target network every 1024 actions
-  replay_buffer: 500000  # max buffer size
+  replay_buffer: 1000000  # max buffer size
   min_replay_buffer_size: 50000  # wait to train until buffer reaches this size
   num_episodes: 20000
+  training_time_limit: 86400  # training time limit in seconds
   episode_time_limit: 18000  # max number of actions per episode
   eval_every: 1000
   eval_episodes: 1
